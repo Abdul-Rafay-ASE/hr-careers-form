@@ -1,0 +1,25 @@
+# HR Careers Form - Docker Compose
+# Standalone deployment for the careers application form
+
+version: '3.8'
+
+services:
+  careers-form:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hr-careers-form
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - careers-network
+
+networks:
+  careers-network:
+    driver: bridge
