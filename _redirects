@@ -1,3 +1,0 @@
-# Cloudflare Pages redirects
-# Route all /apply/* paths to index.html for client-side routing
-/apply/*  /index.html  200
