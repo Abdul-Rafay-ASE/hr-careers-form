@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Position - 3L Group Careers</title>
+    <meta name="description" content="Apply for open positions at 3L Group. Join our team and grow your career.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+
+    <!-- Tabler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="apply-container" x-data="careerForm()" x-init="init()">
+        <div class="apply-card">
+            <!-- Header -->
+            <div class="apply-header">
+                <div class="company-logo">
+                    <img src="images/logo.jpg" alt="3L Group">
+                </div>
+                <h1 class="job-title" x-text="job?.title || 'Loading...'"></h1>
+                <div class="job-meta" x-show="job">
+                    <div class="job-meta-item" x-show="job?.department">
+                        <i class="ti ti-building"></i>
+                        <span x-text="job?.department"></span>
+                    </div>
+                    <div class="job-meta-item" x-show="job?.location">
+                        <i class="ti ti-map-pin"></i>
+                        <span x-text="job?.location || 'Remote'"></span>
+                    </div>
+                    <div class="job-meta-item" x-show="job?.employment_type">
+                        <i class="ti ti-clock"></i>
+                        <span x-text="formatEmploymentType(job?.employment_type)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div x-show="loading" x-cloak class="apply-body text-center py-5">
+                <i class="ti ti-loader animate-spin" style="font-size: 3rem; color: var(--brand-accent);"></i>
+                <p class="text-muted mt-3">Loading job details...</p>
+            </div>
+
+            <!-- Job Not Found -->
+            <div x-show="!loading && !job" x-cloak class="status-closed">
+                <div class="mb-4">
+                    <i class="ti ti-file-off" style="font-size: 4rem; color: #94a3b8;"></i>
+                </div>
+                <h3 class="mb-2">Job Not Found</h3>
+                <p class="text-muted mb-4">This job posting may have been removed or is no longer available.</p>
+                <a :href="CONFIG.COMPANY_WEBSITE" class="btn btn-outline-primary">
+                    <i class="ti ti-home me-1"></i> Go to Homepage
+                </a>
+            </div>
+
+            <!-- Job Closed -->
+            <div x-show="!loading && job && job.status !== 'open'" x-cloak class="status-closed">
+                <div class="mb-4">
+                    <i class="ti ti-lock" style="font-size: 4rem; color: #94a3b8;"></i>
+                </div>
+                <h3 class="mb-2">Applications Closed</h3>
+                <p class="text-muted mb-4">This position is no longer accepting applications.</p>
+                <a :href="CONFIG.COMPANY_WEBSITE" class="btn btn-outline-primary">
+                    <i class="ti ti-briefcase me-1"></i> View Other Openings
+                </a>
+            </div>
+
+            <!-- Success State -->
+            <div x-show="submitted" x-cloak class="success-state">
+                <div class="success-icon">
+                    <i class="ti ti-check" style="font-size: 3rem; color: #fff;"></i>
+                </div>
+                <h2 class="mb-3" style="color: #16a34a;">Application Submitted!</h2>
+                <p class="text-muted mb-4" style="max-width: 400px; margin: 0 auto;">
+                    Thank you for applying for the <strong x-text="job?.title"></strong> position at 3L Group.
+                    We've received your application and our team will review it shortly.
+                </p>
+                <div class="alert alert-success mx-auto mb-4" style="max-width: 400px;">
+                    <i class="ti ti-mail-check me-2"></i>
+                    A confirmation has been sent to <strong x-text="form.email"></strong>
+                </div>
+                <p class="text-muted small mb-3">
+                    Reference: <code x-text="applicationRef"></code>
+                </p>
+
+                <!-- Redirect Notice -->
+                <div x-show="redirectCountdown >= 0" class="redirect-notice mt-4 p-3">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                        <i class="ti ti-brand-linkedin" style="font-size: 1.5rem; color: #0077b5;"></i>
+                        <span class="fw-medium" style="color: #0077b5;">Redirecting to LinkedIn</span>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        You'll be redirected to LinkedIn in <strong x-text="redirectCountdown"></strong> seconds...
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button @click="redirectToLinkedIn()" class="btn btn-sm btn-linkedin">
+                            <i class="ti ti-brand-linkedin me-1"></i> Go Now
+                        </button>
+                        <button @click="cancelRedirect()" class="btn btn-sm btn-outline-secondary">
+                            <i class="ti ti-x me-1"></i> Stay Here
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Redirect Cancelled Message -->
+                <div x-show="redirectCountdown < 0" class="mt-4">
+                    <a href="https://www.linkedin.com/feed/" target="_blank" class="btn btn-sm btn-linkedin">
+                        <i class="ti ti-brand-linkedin me-1"></i> Go to LinkedIn
+                    </a>
+                </div>
+            </div>
+
+            <!-- Application Form -->
+            <div x-show="!loading && job && job.status === 'open' && !submitted" x-cloak>
+                <!-- Job Brief -->
+                <div class="apply-body pb-0" x-show="job?.role_overview || (job?.required_skills && job?.required_skills.length > 0)">
+                    <div class="job-details">
+                        <div x-show="job?.role_overview">
+                            <h6><i class="ti ti-info-circle me-1"></i> About This Role</h6>
+                            <p class="text-muted small mb-3" x-text="job?.role_overview"></p>
+                        </div>
+                        <div x-show="job?.required_skills && job?.required_skills.length > 0">
+                            <h6><i class="ti ti-list-check me-1"></i> Required Skills</h6>
+                            <div class="skills-list">
+                                <template x-for="skill in (job?.required_skills || [])" :key="skill">
+                                    <span class="skill-tag" x-text="skill"></span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitApplication()" class="apply-body">
+                    <!-- Personal Information -->
+                    <h5 class="section-title">
+                        <i class="ti ti-user"></i>
+                        Personal Information
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" x-model="form.first_name" required
+                                   placeholder="Enter your first name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" x-model="form.last_name" required
+                                   placeholder="Enter your last name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address <span class="required-star">*</span></label>
+                            <input type="email" class="form-control" x-model="form.email" required
+                                   placeholder="your.email@example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number <span class="required-star">*</span></label>
+                            <input type="tel" class="form-control" x-model="form.phone" required
+                                   placeholder="+966 50 123 4567">
+                        </div>
+                    </div>
+
+                    <!-- Professional Information -->
+                    <h5 class="section-title">
+                        <i class="ti ti-briefcase"></i>
+                        Professional Background
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Years of Experience</label>
+                            <select class="form-select" x-model="form.experience_years">
+                                <option value="">Select experience level</option>
+                                <option value="0">Fresh Graduate / Less than 1 year</option>
+                                <option value="1">1-2 years</option>
+                                <option value="3">3-5 years</option>
+                                <option value="6">6-10 years</option>
+                                <option value="10">10+ years</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Current/Last Company</label>
+                            <input type="text" class="form-control" x-model="form.current_company"
+                                   placeholder="Company name (optional)">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">LinkedIn Profile</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="ti ti-brand-linkedin"></i></span>
+                                <input type="url" class="form-control" x-model="form.linkedin_url"
+                                       placeholder="https://linkedin.com/in/yourprofile">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resume Upload -->
+                    <h5 class="section-title">
+                        <i class="ti ti-file-text"></i>
+                        Resume / CV <span class="required-star">*</span>
+                    </h5>
+
+                    <div class="mb-4">
+                        <div class="file-upload"
+                             :class="{ 'file-selected': form.cv_file, 'dragover': isDragging }"
+                             @click="$refs.fileInput.click()"
+                             @dragover.prevent="isDragging = true"
+                             @dragleave.prevent="isDragging = false"
+                             @drop.prevent="handleDrop($event)">
+                            <input type="file" x-ref="fileInput" @change="handleFileSelect($event)"
+                                   accept=".pdf,.doc,.docx" class="d-none">
+                            <div class="file-upload-icon">
+                                <i class="ti" :class="form.cv_file ? 'ti-file-check' : 'ti-cloud-upload'"></i>
+                            </div>
+                            <div x-show="!form.cv_file">
+                                <p class="mb-1 fw-medium">Click to upload or drag and drop</p>
+                                <p class="text-muted small mb-0">PDF, DOC, or DOCX (max 10MB)</p>
+                            </div>
+                            <div x-show="form.cv_file">
+                                <p class="mb-1 fw-medium text-success" x-text="form.cv_file?.name"></p>
+                                <p class="text-muted small mb-0">
+                                    <span x-text="formatFileSize(form.cv_file?.size)"></span> - Click to change
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cover Letter -->
+                    <h5 class="section-title">
+                        <i class="ti ti-message-circle"></i>
+                        Additional Information <span class="text-muted fw-normal">(Optional)</span>
+                    </h5>
+
+                    <div class="mb-4">
+                        <label class="form-label">Why are you interested in this role?</label>
+                        <textarea class="form-control" x-model="form.cover_letter" rows="4"
+                                  placeholder="Tell us why you'd be a great fit for this position..."></textarea>
+                    </div>
+
+                    <!-- Error Message -->
+                    <div x-show="error" x-cloak class="alert alert-danger mb-4">
+                        <i class="ti ti-alert-circle me-2"></i>
+                        <span x-text="error"></span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-apply" :disabled="submitting || !isFormValid()">
+                        <span x-show="!submitting">
+                            <i class="ti ti-send me-2"></i> Submit Application
+                        </span>
+                        <span x-show="submitting">
+                            <i class="ti ti-loader animate-spin me-2"></i> Submitting...
+                        </span>
+                    </button>
+                </form>
+
+                <div class="footer-text">
+                    By submitting this application, you agree to our
+                    <a href="#">Privacy Policy</a> and consent to the processing of your personal data.
+                </div>
+            </div>
+        </div>
+
+        <!-- Powered By -->
+        <p class="powered-by">
+            Powered by <strong>3L Group HR System</strong>
+        </p>
+    </div>
+
+    <!-- Configuration - EDIT THIS FILE FOR YOUR DEPLOYMENT -->
+    <script src="js/config.js"></script>
+    <!-- Application Logic -->
+    <script src="js/app.js"></script>
+</body>
+</html>
