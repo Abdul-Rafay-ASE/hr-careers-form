@@ -55,10 +55,21 @@ function careerForm() {
 
         /**
          * Extract job ID from URL
-         * Supports: ?job_id=xxx, ?job=xxx, /apply/xxx, /xxx
+         * Supports: ?job_id=xxx, ?job=xxx, /apply/xxx, /xxx, #/apply/xxx
          */
         getJobIdFromUrl() {
-            // Check query parameters first
+            // Check hash first (for SPA fallback routing)
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#/apply/')) {
+                const jobId = hash.replace('#/apply/', '');
+                // Clean up URL by replacing hash with proper path
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', '/apply/' + jobId);
+                }
+                return jobId;
+            }
+
+            // Check query parameters
             const urlParams = new URLSearchParams(window.location.search);
             let jobId = urlParams.get('job_id') || urlParams.get('job');
 

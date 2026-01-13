@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // Client-side SPA routing for /apply/* paths
+        const path = window.location.pathname;
+        if (path.startsWith('/apply/')) {
+            // Redirect to index.html with the path as a hash
+            window.location.replace('/#' + path);
+        } else {
+            // For other 404s, show error or redirect to home
+            window.location.replace('/');
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
